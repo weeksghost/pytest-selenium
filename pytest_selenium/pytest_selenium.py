@@ -14,9 +14,6 @@ from selenium.webdriver.support.event_firing_webdriver import \
 
 from . import drivers
 
-import allure
-from allure.constants import AttachmentType
-
 PY3 = sys.version_info[0] == 3
 
 SUPPORTED_DRIVERS = [
@@ -195,12 +192,18 @@ def _gather_screenshot(item, report, driver, summary, extra):
         summary.append('WARNING: Failed to gather screenshot: {0}'.format(e))
         return
     pytest_html = item.config.pluginmanager.getplugin('html')
-    allure_report = item.config.pluginmanager.getplugin('allure')
     if pytest_html is not None:
         # add screenshot to the html report
         extra.append(pytest_html.extras.image(screenshot, 'Screenshot'))
-    if allure_report is not None:
-        allure_scr_att = allure.attach('screenshot', allure_screenshot, type=AttachmentType.PNG)
+        try:
+            # Yandex reporting framwork https://goo.gl/oGDC2P
+            import allure
+            from allure.constants import AttachmentType
+            allure_screen = allure.attach( \
+                'screenshot', allure_screenshot, type=AttachmentType.PNG)
+        except Exception as e:
+            summary.append( \
+            'This project is using the Allure framework: http://allure.qatools.ru')
 
 
 def _gather_html(item, report, driver, summary, extra):
