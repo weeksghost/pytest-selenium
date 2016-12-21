@@ -14,6 +14,9 @@ from selenium.webdriver.support.event_firing_webdriver import \
 
 from . import drivers
 
+import allure
+from allure.constants import AttachmentType
+
 PY3 = sys.version_info[0] == 3
 
 SUPPORTED_DRIVERS = [
@@ -187,13 +190,17 @@ def _gather_url(item, report, driver, summary, extra):
 def _gather_screenshot(item, report, driver, summary, extra):
     try:
         screenshot = driver.get_screenshot_as_base64()
+        allure_screenshot = driver.get_screenshot_as_png()
     except Exception as e:
         summary.append('WARNING: Failed to gather screenshot: {0}'.format(e))
         return
     pytest_html = item.config.pluginmanager.getplugin('html')
+    allure_report = item.config.pluginmanager.getplugin('allure')
     if pytest_html is not None:
         # add screenshot to the html report
         extra.append(pytest_html.extras.image(screenshot, 'Screenshot'))
+    if allure_report is not None:
+        allure_scr_att = allure.attach('screenshot', allure_screenshot, type=AttachmentType.PNG)
 
 
 def _gather_html(item, report, driver, summary, extra):
