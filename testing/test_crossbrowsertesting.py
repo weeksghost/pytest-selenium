@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from functools import partial
+import os
 
 import pytest
 
@@ -33,12 +34,37 @@ def failure(testdir, testfile, httpserver_base_url):
                    '--driver', 'CrossBrowserTesting')
 
 
-def test_missing_username(failure):
-    out = failure()
-    assert 'UsageError: CrossBrowserTesting username must be set' in out
+def test_missing_username(failure, monkeypatch, tmpdir):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
+    assert 'CrossBrowserTesting username must be set' in failure()
 
 
-def test_missing_api_key(failure, monkeypatch):
+def test_missing_access_key_env(failure, monkeypatch, tmpdir):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
     monkeypatch.setenv('CROSSBROWSERTESTING_USERNAME', 'foo')
-    out = failure()
-    assert 'UsageError: CrossBrowserTesting auth key must be set' in out
+    assert 'CrossBrowserTesting key must be set' in failure()
+
+
+def test_missing_access_key_file(failure, monkeypatch, tmpdir):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
+    tmpdir.join('.crossbrowsertesting').write('[credentials]\nusername=foo')
+    assert 'CrossBrowserTesting key must be set' in failure()
+
+
+@pytest.mark.parametrize(('username', 'key'),
+                         [('CROSSBROWSERTESTING_USERNAME',
+                           'CROSSBROWSERTESTING_AUTH_KEY'),
+                          ('CROSSBROWSERTESTING_USR',
+                           'CROSSBROWSERTESTING_PSW')])
+def test_invalid_credentials_env(failure, monkeypatch, tmpdir, username, key):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
+    monkeypatch.setenv(username, 'foo')
+    monkeypatch.setenv(key, 'bar')
+    failure('--capability', 'browser_api_name', 'FF46')
+
+
+def test_invalid_credentials_file(failure, monkeypatch, tmpdir):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
+    config = tmpdir.join('.crossbrowsertesting')
+    config.write('[credentials]\nusername=foo\nkey=bar')
+    failure('--capability', 'browser_api_name', 'FF46')

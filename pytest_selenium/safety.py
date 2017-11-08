@@ -33,7 +33,12 @@ def pytest_configure(config):
 
 
 def pytest_report_header(config, startdir):
-    return 'sensitiveurl: {0}'.format(config.getoption('sensitive_url'))
+    base_url = config.getoption('base_url')
+    sensitive_url = config.getoption('sensitive_url')
+    msg = 'sensitiveurl: {0}'.format(sensitive_url)
+    if base_url and sensitive_url and re.search(sensitive_url, base_url):
+        msg += ' *** WARNING: sensitive url matches {} ***'.format(base_url)
+    return msg
 
 
 @pytest.fixture(scope='session')

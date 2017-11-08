@@ -2,24 +2,24 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import argparse
 import copy
 from datetime import datetime
 import os
-import sys
 
 import pytest
 from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.event_firing_webdriver import \
     EventFiringWebDriver
 
 from . import drivers
 
-PY3 = sys.version_info[0] == 3
-
 SUPPORTED_DRIVERS = [
     'BrowserStack',
     'CrossBrowserTesting',
     'Chrome',
+    'Edge',
     'Firefox',
     'Ie',
     'PhantomJS',
@@ -37,33 +37,36 @@ def pytest_addhooks(pluginmanager):
     method(hooks)
 
 
-@pytest.fixture(scope='session', autouse=True)
-def _environment(request, session_capabilities):
-    """Provide additional environment details to pytest-html report"""
-    config = request.config
-    # add environment details to the pytest-html plugin
-    config._environment.append(('Driver', config.option.driver))
-    # add capabilities to environment
-    config._environment.extend([('Capability', '{0}: {1}'.format(
-        k, v)) for k, v in session_capabilities.items()])
-    if config.option.driver == 'Remote':
-        config._environment.append(
-            ('Server', 'http://{0.host}:{0.port}'.format(config.option)))
-
-
 @pytest.fixture(scope='session')
-def session_capabilities(request, variables):
+def session_capabilities(pytestconfig):
     """Returns combined capabilities from pytest-variables and command line"""
-    capabilities = variables.get('capabilities', {})
-    for capability in request.config.getoption('capabilities'):
-        capabilities[capability[0]] = capability[1]
+    driver = pytestconfig.getoption('driver').upper()
+    capabilities = getattr(DesiredCapabilities, driver, {}).copy()
+    if driver == 'REMOTE':
+        browser = capabilities.get('browserName', '').upper()
+        capabilities.update(getattr(DesiredCapabilities, browser, {}))
+    capabilities.update(pytestconfig._capabilities)
     return capabilities
 
 
 @pytest.fixture
-def capabilities(request, session_capabilities):
+def capabilities(request, driver_class, chrome_options, firefox_options,
+                 session_capabilities):
     """Returns combined capabilities"""
     capabilities = copy.deepcopy(session_capabilities)  # make a copy
+    if driver_class == webdriver.Remote:
+        browser = capabilities.get('browserName', '').upper()
+        key, options = (None, None)
+        if browser == 'CHROME':
+            key = getattr(chrome_options, 'KEY', 'goog:chromeOptions')
+            options = chrome_options.to_capabilities()
+            if key not in options:
+                key = 'chromeOptions'
+        elif browser == 'FIREFOX':
+            key = firefox_options.KEY
+            options = firefox_options.to_capabilities()
+        if all([key, options]):
+            capabilities.setdefault(key, {}).update(options.get(key, {}))
     capabilities_marker = request.node.get_marker('capabilities')
     if capabilities_marker is not None:
         # add capabilities from the marker
@@ -72,19 +75,31 @@ def capabilities(request, session_capabilities):
 
 
 @pytest.fixture
-def driver_kwargs(request, capabilities, driver_class, driver_path,
-                  firefox_options, firefox_profile):
+def driver_args():
+    """Return arguments to pass to the driver service"""
+    return None
+
+
+@pytest.fixture
+def driver_kwargs(request, capabilities, chrome_options, driver_args,
+                  driver_class, driver_log, driver_path, firefox_options,
+                  firefox_profile, pytestconfig):
     kwargs = {}
-    driver = request.config.getoption('driver').lower()
-    kwargs.update(getattr(drivers, driver).driver_kwargs(
+    driver = getattr(drivers, pytestconfig.getoption('driver').lower())
+    kwargs.update(driver.driver_kwargs(
         capabilities=capabilities,
+        chrome_options=chrome_options,
+        driver_args=driver_args,
+        driver_log=driver_log,
         driver_path=driver_path,
         firefox_options=firefox_options,
         firefox_profile=firefox_profile,
-        host=request.config.getoption('host'),
-        port=request.config.getoption('port'),
+        host=pytestconfig.getoption('host'),
+        port=pytestconfig.getoption('port'),
         request=request,
+        log_path=None,
         test='.'.join(split_class_and_test_names(request.node.nodeid))))
+    pytestconfig._driver_log = driver_log
     return kwargs
 
 
@@ -94,6 +109,12 @@ def driver_class(request):
     if driver is None:
         raise pytest.UsageError('--driver must be specified')
     return getattr(webdriver, driver, webdriver.Remote)
+
+
+@pytest.fixture
+def driver_log(tmpdir):
+    """Return path to driver log"""
+    return str(tmpdir.join('driver.log'))
 
 
 @pytest.fixture
@@ -125,13 +146,22 @@ def selenium(driver):
     yield driver
 
 
+@pytest.hookimpl(trylast=True)
 def pytest_configure(config):
-    if hasattr(config, 'slaveinput'):
-        return  # xdist slave
+    capabilities = config._variables.get('capabilities', {})
+    capabilities.update({k: v for k, v in config.getoption('capabilities')})
     config.addinivalue_line(
         'markers', 'capabilities(kwargs): add or change existing '
         'capabilities. specify capabilities as keyword arguments, for example '
         'capabilities(foo=''bar'')')
+    if hasattr(config, '_metadata'):
+        config._metadata['Driver'] = config.getoption('driver')
+        config._metadata['Capabilities'] = capabilities
+        if all((config.getoption('host'), config.getoption('port'))):
+            config._metadata['Server'] = '{0}:{1}'.format(
+                config.getoption('host'),
+                config.getoption('port'))
+    config._capabilities = capabilities
 
 
 def pytest_report_header(config, startdir):
@@ -209,8 +239,6 @@ def _gather_screenshot(item, report, driver, summary, extra):
 def _gather_html(item, report, driver, summary, extra):
     try:
         html = driver.page_source
-        if not PY3:
-            html = html.encode('utf-8')
     except Exception as e:
         summary.append('WARNING: Failed to gather HTML: {0}'.format(e))
         return
@@ -221,6 +249,12 @@ def _gather_html(item, report, driver, summary, extra):
 
 
 def _gather_logs(item, report, driver, summary, extra):
+    pytest_html = item.config.pluginmanager.getplugin('html')
+    if item.config._driver_log and os.path.exists(item.config._driver_log):
+        if pytest_html is not None:
+            with open(item.config._driver_log, 'r') as f:
+                extra.append(pytest_html.extras.text(f.read(), 'Driver Log'))
+        summary.append('Driver log: {0}'.format(item.config._driver_log))
     try:
         types = driver.log_types
     except Exception as e:
@@ -234,7 +268,6 @@ def _gather_logs(item, report, driver, summary, extra):
             summary.append('WARNING: Failed to gather {0} log: {1}'.format(
                 name, e))
             return
-        pytest_html = item.config.pluginmanager.getplugin('html')
         if pytest_html is not None:
             extra.append(pytest_html.extras.text(
                 format_log(log), '%s Log' % name.title()))
@@ -246,8 +279,6 @@ def format_log(log):
         datetime.utcfromtimestamp(entry['timestamp'] / 1000.0).strftime(
             timestamp_format), entry).rstrip() for entry in log]
     log = '\n'.join(entries)
-    if not PY3:
-        log = log.encode('utf-8')
     return log
 
 
@@ -262,6 +293,16 @@ def split_class_and_test_names(nodeid):
     return (classname, name)
 
 
+class DriverAction(argparse.Action):
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+        driver = getattr(drivers, values.lower())
+        # set the default host and port if specified in the driver module
+        setattr(namespace, 'host', getattr(driver, 'HOST', None))
+        setattr(namespace, 'port', getattr(driver, 'PORT', None))
+
+
 def pytest_addoption(parser):
     _capture_choices = ('never', 'failure', 'always')
     parser.addini('selenium_capture_debug',
@@ -273,6 +314,7 @@ def pytest_addoption(parser):
 
     group = parser.getgroup('selenium', 'selenium')
     group._addoption('--driver',
+                     action=DriverAction,
                      choices=SUPPORTED_DRIVERS,
                      help='webdriver implementation.',
                      metavar='str')
@@ -290,3 +332,14 @@ def pytest_addoption(parser):
                      metavar='str',
                      help='selenium eventlistener class, e.g. '
                           'package.module.EventListenerClassName.')
+    group._addoption('--host',
+                     metavar='str',
+                     help='host that the selenium server is listening on, '
+                          'which will default to the cloud provider default '
+                          'or localhost.')
+    group._addoption('--port',
+                     type=int,
+                     metavar='num',
+                     help='port that the selenium server is listening on, '
+                          'which will default to the cloud provider default '
+                          'or localhost.')

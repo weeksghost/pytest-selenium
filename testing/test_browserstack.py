@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from functools import partial
+import os
 
 import pytest
 
@@ -32,20 +33,39 @@ def failure(testdir, testfile, httpserver_base_url):
                    '--driver', 'BrowserStack')
 
 
-def test_missing_username(failure):
-    out = failure()
-    assert 'UsageError: BrowserStack username must be set' in out
+def test_missing_username(failure, monkeypatch, tmpdir):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
+    assert 'BrowserStack username must be set' in failure()
 
 
-def test_missing_access_key(failure, monkeypatch):
+def test_missing_access_key_env(failure, monkeypatch, tmpdir):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
     monkeypatch.setenv('BROWSERSTACK_USERNAME', 'foo')
-    out = failure()
-    assert 'UsageError: BrowserStack access key must be set' in out
+    assert 'BrowserStack key must be set' in failure()
 
 
-@pytest.mark.skipif(reason='Frequent timeouts occurring with BrowserStack')
-def test_invalid_credentials(failure, monkeypatch):
-    monkeypatch.setenv('BROWSERSTACK_USERNAME', 'foo')
-    monkeypatch.setenv('BROWSERSTACK_ACCESS_KEY', 'bar')
+def test_missing_access_key_file(failure, monkeypatch, tmpdir):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
+    tmpdir.join('.browserstack').write('[credentials]\nusername=foo')
+    assert 'BrowserStack key must be set' in failure()
+
+
+@pytest.mark.parametrize(('username', 'key'), [('BROWSERSTACK_USERNAME',
+                                                'BROWSERSTACK_ACCESS_KEY'),
+                                               ('BROWSERSTACK_USR',
+                                                'BROWSERSTACK_PSW')])
+def test_invalid_credentials_env(failure, monkeypatch, tmpdir, username, key):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
+    monkeypatch.setenv(username, 'foo')
+    monkeypatch.setenv(key, 'bar')
     out = failure()
-    assert 'Invalid username or password' in out
+    messages = ['Invalid username or password', 'basic auth failed']
+    assert any(message in out for message in messages)
+
+
+def test_invalid_credentials_file(failure, monkeypatch, tmpdir):
+    monkeypatch.setattr(os.path, 'expanduser', lambda p: str(tmpdir))
+    tmpdir.join('.browserstack').write('[credentials]\nusername=foo\nkey=bar')
+    out = failure()
+    messages = ['Invalid username or password', 'basic auth failed']
+    assert any(message in out for message in messages)

@@ -4,33 +4,13 @@
 
 import os
 
-import pytest
-
-
-def pytest_addoption(parser):
-    group = parser.getgroup('selenium', 'selenium')
-    group._addoption('--host',
-                     default=os.environ.get('SELENIUM_HOST', 'localhost'),
-                     metavar='str',
-                     help='host that selenium server is listening on. '
-                          '(default: %default)')
-    group._addoption('--port',
-                     type='int',
-                     default=os.environ.get('SELENIUM_PORT', 4444),
-                     metavar='num',
-                     help='port that selenium server is listening on. '
-                          '(default: %default)')
+HOST = os.environ.get('SELENIUM_HOST', 'localhost')
+PORT = os.environ.get('SELENIUM_PORT', 4444)
 
 
 def driver_kwargs(capabilities, firefox_profile, host, port, **kwargs):
-    if 'browserName' not in capabilities:
-        # remote instances must at least specify a browserName capability
-        raise pytest.UsageError('The \'browserName\' capability must be '
-                                'specified when using the remote driver.')
-    capabilities.setdefault('version', '')  # default to any version
-    capabilities.setdefault('platform', 'ANY')  # default to any platform
+    executor = 'http://{0}:{1}/wd/hub'.format(host, port)
 
-    executor = 'http://{host}:{port}/wd/hub'.format(host=host, port=port)
     kwargs = {
         'command_executor': executor,
         'desired_capabilities': capabilities,
