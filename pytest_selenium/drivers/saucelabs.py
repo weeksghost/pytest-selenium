@@ -4,12 +4,11 @@
 
 import json
 
-from _pytest.mark import MarkInfo
 from py.xml import html
 import pytest
 import requests
 
-from pytest_selenium.drivers.cloud import Provider
+from pytest_selenium.drivers.cloud import Provider, get_markers
 
 
 class SauceLabs(Provider):
@@ -86,10 +85,15 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
 
 def driver_kwargs(request, test, capabilities, **kwargs):
     provider = SauceLabs()
-    keywords = request.node.keywords
-    capabilities.setdefault('name', test)
-    markers = [m for m in keywords.keys() if isinstance(keywords[m], MarkInfo)]
-    tags = capabilities.get('tags', []) + markers
+
+    _capabilities = capabilities
+    if os.getenv("SAUCELABS_W3C") == "true":
+        _capabilities = capabilities.setdefault("sauce:options", {})
+
+    _capabilities.setdefault("username", provider.username)
+    _capabilities.setdefault("accessKey", provider.key)
+    _capabilities.setdefault("name", test)
+    tags = _capabilities.get("tags", []) + get_markers(request.node)
     if tags:
         capabilities['tags'] = tags
     kwargs = {
