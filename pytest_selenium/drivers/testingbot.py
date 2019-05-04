@@ -3,19 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import pytest
-<<<<<<< HEAD
 
 from py.xml import html
 import requests
 
 from pytest_selenium.drivers.cloud import Provider, get_markers
-=======
-import requests
-
-from hashlib import md5
-from py.xml import html
-from pytest_selenium.drivers.cloud import Provider
->>>>>>> a26c40820b6d4fb96061cfc0c934546b025e3b47
 
 HOST = "hub.testingbot.com"
 PORT = 443
