@@ -3,11 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import pytest
-
-from py.xml import html
 import requests
 
-from pytest_selenium.drivers.cloud import Provider, get_markers
+from hashlib import md5
+from py.xml import html
+from pytest_selenium.drivers.cloud import Provider
 
 HOST = "hub.testingbot.com"
 PORT = 443
@@ -92,7 +92,8 @@ def driver_kwargs(request, test, capabilities, host, port, **kwargs):
     capabilities.setdefault("name", test)
     capabilities.setdefault("client_key", provider.key)
     capabilities.setdefault("client_secret", provider.secret)
-    groups = capabilities.get("groups", []) + get_markers(request.node)
+    markers = [x.name for x in request.node.iter_markers()]
+    groups = capabilities.get("groups", []) + markers
     if groups:
         capabilities["groups"] = groups
     kwargs = {
