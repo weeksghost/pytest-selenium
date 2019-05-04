@@ -95,7 +95,7 @@ Specifying a Browser
 ********************
 
 To indicate the browser you want to run your tests against you will need to
-specify a driver and optional capabilties.
+specify a driver and optional capabilities.
 
 Firefox
 -------
@@ -136,6 +136,16 @@ preferences, and a command line argument:
 See the `Firefox options API documentation`_ for full details of what can be
 configured.
 
+You can also use the ``firefox_preferences`` and ``firefox_arguments`` markers:
+
+.. code-block:: python
+
+  import pytest
+  @pytest.mark.firefox_arguments('-foreground')
+  @pytest.mark.firefox_preferences({'browser.anchor_color': '#FF0000'})
+  def test_firefox(selenium):
+      selenium.get('http://www.example.com')
+
 Chrome
 ------
 
@@ -172,14 +182,14 @@ configured.
 
 The ChromeDriver supports various command line arguments. These can be passed
 by implementing a ``driver_args`` fixture and returning a list of the desired
-arguments. The following example specifies the log file path:
+arguments. The following example specifies the log level:
 
 .. code-block:: python
 
   import pytest
   @pytest.fixture
   def driver_args():
-      return ['--log-path=chromedriver.log']
+      return ['--log-level=LEVEL']
 
 For a full list of supported command line arguments, run
 ``chromedriver --help`` in your terminal.
@@ -279,8 +289,10 @@ Sauce Labs
 To run your automated tests using `Sauce Labs <https://saucelabs.com/>`_, you
 must provide a valid username and API key. This can be done either by using
 a ``.saucelabs`` configuration file in the working directory or your home
-directory, or by setting the ``SAUCELABS_USERNAME`` and ``SAUCELABS_API_KEY``
-environment variables.
+directory, by setting the ``SAUCELABS_USERNAME`` and ``SAUCELABS_API_KEY``
+environment variables, or by using the environment variables as detailed
+`here <https://wiki.saucelabs.com/display/DOCS/
+Best+Practice%3A+Use+Environment+Variables+for+Authentication+Credentials>`_
 
 Alternatively, when using `Jenkins CI`_ declarative pipelines,
 credentials can be set as environment variables as follows:
@@ -316,6 +328,40 @@ to help you with your configuration. Additional capabilities can be set using
 the ``--capability`` command line arguments. See the
 `test configuration documentation <https://docs.saucelabs.com/reference/test-configuration/>`_
 for full details of what can be configured.
+
+W3C compliant capabilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with selenium version 3.11.0 Sauce Labs supports the selenium W3C compliant capabilities.
+To use the W3C capabilities you have to set the ``SAUCELABS_W3C`` environment variable to ``true``
+and update your :ref:`capabilities <capabilities>` according to the Sauce labs
+`W3C documentation <https://wiki.saucelabs.com/display/DOCS/Selenium+W3C+Capabilities+Support+-+Beta>`_.
+
+Test result links
+~~~~~~~~~~~~~~~~~
+
+By default, links to Sauce Labs jobs are only visible to users logged in to the account
+that ran the job. To make a job visible without having to log in, you can create a link
+with an authentication token.
+
+This can be configured by setting the ``SAUCELABS_JOB_AUTH`` environment variable or by
+using a :ref:`configuration file <configuration-files>`
+
+An example using a :ref:`configuration file <configuration-files>`:
+
+.. code-block:: ini
+
+  [pytest]
+  saucelabs_job_auth = token
+
+You can also control the time to live for that link by setting the environment variable
+or :ref:`configuration file <configuration-files>`: value to ``day`` or ``hour``.
+
+Note that ``day`` means within the same day that the test was run,
+*not* "24 hours from test-run", likewise for ``hour``
+
+For more information, see
+`building links to test results <https://wiki.saucelabs.com/display/DOCS/Building+Links+to+Test+Results>`_
 
 BrowserStack
 ------------
@@ -458,6 +504,8 @@ arguments. See the
 `automation capabilities <https://help.crossbrowsertesting.com/selenium-testing/general/crossbrowsertesting-automation-capabilities/>`_
 for full details of what can be configured.
 
+.. _capabilities:
+
 Specifying Capabilities
 ***********************
 
@@ -477,7 +525,7 @@ Capabilities Files
 
 To specify capabilities, you can provide a JSON file on the command line using
 the `pytest-variables <https://github.com/pytest-dev/pytest-variables>`_ plugin.
-For example if you had a ``capabilties.json`` containing your capabilities, you
+For example if you had a ``capabilities.json`` containing your capabilities, you
 would need to include ``--variables capabilities.json`` on your command line.
 
 The following is an example of a variables file including capabilities:

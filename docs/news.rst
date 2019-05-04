@@ -1,6 +1,78 @@
 Release Notes
 =============
 
+1.16.0 (2019-02-12)
+-------------------
+
+* ``pytest-selenium`` now requires pytest 3.6 or later.
+* Fixed `issue <https://github.com/pytest-dev/pytest-selenium/issues/216>`_ with TestingBot local tunnel.
+
+1.15.1 (2019-01-07)
+-------------------
+
+* Added support for pytest 4.1.
+
+1.15.0 (2019-01-03)
+-------------------
+
+* Project now uses `pre-commit <https://pre-commit.com/>`_ and `black <https://github.com/ambv/black>`_ for development.
+
+* Fixed html report embedded video from Testingbot.
+
+* Fixed more (``get_markers``) deprecations on pytest 3.6 and later.
+
+* Fixed a deprecation warning (``yield_fixture``) on pytest 3.0 and later.
+
+* Move Testingbot credentials to capabilities instead of URL.
+
+* Move BrowserStack credentials to capabilities instead of URL.
+
+* Move CrossBrowserTesting credentials to capabilities instead of URL.
+
+1.14.0 (2018-08-23)
+-------------------
+
+* Handle Sauce Labs W3C compliance using :code:`sauce_options`.
+
+* Fix bug with test reporting when using cloud providers.
+
+* Fixed a deprecation warning (``log_path``) on Selenium 3.14 and later.
+
+* Fixed a deprecation warning (``get_markers``) on pytest 3.6 and later.
+
+* Move Sauce Labs credentials to capabilities instead of URL.
+
+  * Thanks to `@RonnyPfannschmidt <https://github.com/RonnyPfannschmidt>`_ for pointing out the vulnerability
+
+1.13.0 (2018-05-25)
+-------------------
+
+* Use https for Sauce Labs URLs.
+
+  * Thanks to `@stephendonner <https://github.com/stephendonner>`_ for the PR
+
+* Support W3C compliant capabilities with Sauce Labs.
+
+  * Thanks to `@BeyondEvil <https://github.com/BeyondEvil>`_ for the PR
+
+* Support Sauce Labs token authentication for job URLs.
+
+  * Thanks to `@BeyondEvil <https://github.com/BeyondEvil>`_ for the PR
+
+* Merge browser options within capabilities when using a remote driver.
+
+* Accept ``SAUCE_USERNAME`` and ``SAUCE_ACCESS_KEY`` as alternate environment
+  variables for Sauce Labs credentials.
+
+  * Thanks to `@BeyondEvil <https://github.com/BeyondEvil>`_ for the PR
+
+1.12.0 (2018-03-21)
+-------------------
+
+* Include driver logs in the HTML report when the driver fails to start.
+
+  * Thanks to `@jrbenny35 <https://github.com/jrbenny35>`_ for the PR
+
 1.11.4 (2018-01-11)
 -------------------
 
