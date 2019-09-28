@@ -199,6 +199,7 @@ def pytest_runtest_makereport(item, call):
                 _gather_logs(item, report, driver, summary, extra)
             item.config.hook.pytest_selenium_capture_debug(
                 item=item, report=report, extra=extra)
+            driver.add_cookie({'name': 'zaleniumTestPassed', 'value': 'false'})
         item.config.hook.pytest_selenium_runtest_makereport(
             item=item, report=report, summary=summary, extra=extra)
     if summary:
