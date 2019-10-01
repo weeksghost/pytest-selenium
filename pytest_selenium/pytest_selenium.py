@@ -199,12 +199,20 @@ def pytest_runtest_makereport(item, call):
                 _gather_logs(item, report, driver, summary, extra)
             item.config.hook.pytest_selenium_capture_debug(
                 item=item, report=report, extra=extra)
-            driver.add_cookie({'name': 'zaleniumTestPassed', 'value': 'false'})
+            _add_zalenium_cookie(driver)
         item.config.hook.pytest_selenium_runtest_makereport(
             item=item, report=report, summary=summary, extra=extra)
     if summary:
         report.sections.append(('pytest-selenium', '\n'.join(summary)))
     report.extra = extra
+
+
+def _add_zalenium_cookie(driver):
+    try:
+        driver.add_cookie({'name': 'zaleniumTestPassed', 'value': 'false'})
+    except Exception as e:
+        summary.append('WARNING: Failed to gather set cookie: {0}'.format(e))
+        return
 
 
 def _gather_url(item, report, driver, summary, extra):
