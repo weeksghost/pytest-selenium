@@ -9,7 +9,7 @@ from py.xml import html
 import pytest
 import requests
 
-from pytest_selenium.drivers.cloud import Provider, get_markers
+from pytest_selenium.drivers.cloud import Provider
 
 
 class SauceLabs(Provider):
