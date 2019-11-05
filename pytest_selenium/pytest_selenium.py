@@ -17,23 +17,6 @@ from selenium.webdriver.support.event_firing_webdriver import EventFiringWebDriv
 
 from . import drivers
 
-<<<<<<< HEAD
-import allure
-from allure.constants import AttachmentType
-
-SUPPORTED_DRIVERS = CaseInsensitiveDict({
-    'BrowserStack': webdriver.Remote,
-    'CrossBrowserTesting': webdriver.Remote,
-    'Chrome': webdriver.Chrome,
-    'Edge': webdriver.Edge,
-    'Firefox': webdriver.Firefox,
-    'IE': webdriver.Ie,
-    'PhantomJS': webdriver.PhantomJS,
-    'Remote': webdriver.Remote,
-    'Safari': webdriver.Safari,
-    'SauceLabs': webdriver.Remote,
-    'TestingBot': webdriver.Remote})
-=======
 LOGGER = logging.getLogger(__name__)
 
 
@@ -82,7 +65,6 @@ def _merge(a, b):
         else:
             a[key] = b[key]
     return a
->>>>>>> d1d4ff6f7817cc5c3b178e7524cda5b70ee06e4a
 
 
 def pytest_addhooks(pluginmanager):
@@ -324,7 +306,6 @@ def _gather_screenshot(item, report, driver, summary, extra):
     pytest_html = item.config.pluginmanager.getplugin("html")
     if pytest_html is not None:
         # add screenshot to the html report
-<<<<<<< HEAD
         extra.append(pytest_html.extras.image(screenshot, 'Screenshot'))
         try:
             # Yandex reporting framwork https://goo.gl/oGDC2P
@@ -335,9 +316,6 @@ def _gather_screenshot(item, report, driver, summary, extra):
         except Exception as e:
             summary.append( \
             'This project is using the Allure framework: http://allure.qatools.ru')
-=======
-        extra.append(pytest_html.extras.image(screenshot, "Screenshot"))
->>>>>>> d1d4ff6f7817cc5c3b178e7524cda5b70ee06e4a
 
 
 def _gather_html(item, report, driver, summary, extra):
