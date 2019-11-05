@@ -7,6 +7,7 @@ import sys
 
 from pytest_selenium.exceptions import MissingCloudCredentialError
 
+
 if sys.version_info[0] == 2:
     import ConfigParser as configparser
 else:
@@ -14,28 +15,21 @@ else:
 
 
 class Provider(object):
-
     @property
-    def driver(self):
+    def name(self):
         return type(self).__name__
 
     @property
-    def name(self):
-        return self.driver
-
-    @property
     def config(self):
-        name = '.{0}'.format(self.driver.lower())
+        name = ".{0}".format(self.name.lower())
         config = configparser.ConfigParser()
-        config.read([name, os.path.join(os.path.expanduser('~'), name)])
+        config.read([name, os.path.join(os.path.expanduser("~"), name)])
         return config
 
     def get_credential(self, key, envs):
         try:
-            return self.config.get('credentials', key)
-        except (configparser.NoSectionError,
-                configparser.NoOptionError,
-                KeyError):
+            return self.config.get("credentials", key)
+        except (configparser.NoSectionError, configparser.NoOptionError, KeyError):
             for env in envs:
                 value = os.getenv(env)
                 if value:
@@ -44,18 +38,3 @@ class Provider(object):
 
     def uses_driver(self, driver):
         return driver.lower() == self.name.lower()
-
-
-def get_markers(node):
-    # `MarkInfo` is removed in pytest 4.1.0
-    # see https://github.com/pytest-dev/pytest/pull/4564
-    try:
-        from _pytest.mark import MarkInfo
-
-        keywords = node.keywords
-        markers = [m for m in keywords.keys() if isinstance(keywords[m], MarkInfo)]
-    except ImportError:
-        # `iter_markers` was introduced in pytest 3.6
-        markers = [m.name for m in node.iter_markers()]
-
-    return markers

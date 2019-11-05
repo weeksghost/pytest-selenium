@@ -1,27 +1,62 @@
 language: python
 jobs:
   include:
-    - stage:
-      python: 3.6
-      env: TOXENV=flake8
-    - stage:
-      python: 3.6
+    - stage: Tests
+      name: Linting
+      python: 3.7
+      dist: xenial
+      sudo: required
+      before_install: skip
+      addons: skip
+      env: TOXENV=linting
+      cache:
+        directories:
+          - $HOME/.cache/pre-commit
+
+    -
+      name: Docs
+      python: 3.7
+      dist: xenial
+      sudo: required
+      before_install: skip
+      addons: skip
       env: TOXENV=docs
-    - stage:
+
+    -
+      name: python 2.7
       python: 2.7
       env: TOXENV=py27
-    - stage:
+
+    -
+      name: python 3.6
       python: 3.6
       env: TOXENV=py36
-    - stage:
-      python: pypy-5.6.0
+
+    -
+      name: python 3.7
+      python: 3.7
+      dist: xenial
+      sudo: required
+      env: TOXENV=py37
+
+    -
+      name: pypy
+      python: pypy
       env: TOXENV=pypy
+
+    -
+      name: pypy3
+      python: pypy3
+      env: TOXENV=pypy3
+
     - stage: deploy
-      python: 3.6
+      python: 3.7
+      dist: xenial
+      sudo: required
       before_install: skip
       install: skip
-      before_script: skip
       script: skip
+      addons: skip
       deploy:
         provider: pypi
         user: davehunt
@@ -31,20 +66,26 @@ jobs:
         on:
           tags: true
           repo: pytest-dev/pytest-selenium
+
 sudo: required
+
 env:
   global:
-  - DISPLAY=:99.0
-  - PYTEST_ADDOPTS="-m 'not (chrome or edge or safari or phantomjs)'"
+  - PYTEST_ADDOPTS="-m 'not (edge or safari or phantomjs)'"
+  - GECKODRIVER_FALLBACK_VERSION="v0.24.0"
+
 cache: pip
+
 before_install:
-  - export GECKODRIVER_DOWNLOAD=`curl -s 'https://api.github.com/repos/mozilla/geckodriver/releases/latest' | python -c "import sys, json; r = json.load(sys.stdin); print([a for a in r['assets'] if 'linux64' in a['name']][0]['browser_download_url']);"`
-  - curl -L -o /tmp/geckodriver.tar.gz $GECKODRIVER_DOWNLOAD
-  - mkdir $HOME/geckodriver && tar xvf /tmp/geckodriver.tar.gz -C $HOME/geckodriver
-  - export PATH=$HOME/geckodriver:$PATH
-  - geckodriver --version
+  - sudo apt-get update
+  - sudo apt-get install -y curl jq
+  - sudo installation/geckodriver.sh latest
+  - sudo installation/chromedriver.sh latest
+
 install: pip install tox
-before_script: sh -e /etc/init.d/xvfb start
+
 script: tox
+
 addons:
   firefox: latest
+  chrome: stable

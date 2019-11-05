@@ -6,7 +6,7 @@
 
 import pytest
 
-pytest_plugins = 'pytester'
+pytest_plugins = "pytester"
 
 
 def base_url(httpserver):
@@ -15,41 +15,64 @@ def base_url(httpserver):
 
 @pytest.fixture
 def httpserver_base_url(httpserver):
-    return '--base-url={0}'.format(base_url(httpserver))
+    return "--base-url={0}".format(base_url(httpserver))
 
 
 @pytest.fixture(autouse=True)
 def testdir(request, httpserver_base_url):
     item = request.node
-    if 'testdir' not in item.funcargnames:
+    if "testdir" not in item.fixturenames:
         return
 
-    testdir = request.getfuncargvalue('testdir')
+    testdir = request.getfixturevalue("testdir")
 
-    testdir.makepyfile(conftest="""
+    conftest = """
         import pytest
         @pytest.fixture
         def webtext(base_url, selenium):
             selenium.get(base_url)
             return selenium.find_element_by_tag_name('h1').text
-        """)
+        """
+
+    if item.get_closest_marker("chrome"):
+        conftest += """
+        @pytest.fixture
+        def chrome_options(chrome_options):
+            chrome_options.add_argument("headless")
+            return chrome_options
+        """
+
+    testdir.makepyfile(conftest=conftest)
+
+    testdir.makefile(
+        ".cfg",
+        setup=r"""
+        [tool:pytest]
+        filterwarnings =
+            error::DeprecationWarning
+            ignore:--firefox-\w+ has been deprecated:DeprecationWarning
+            ignore:Support for PhantomJS:DeprecationWarning
+    """,
+    )
 
     def runpytestqa(*args, **kwargs):
-        return testdir.runpytest(httpserver_base_url, '--driver', 'Firefox',
-                                 *args, **kwargs)
+        return testdir.runpytest(
+            httpserver_base_url, "--driver", "Firefox", *args, **kwargs
+        )
 
     testdir.runpytestqa = runpytestqa
 
     def inline_runqa(*args, **kwargs):
-        return testdir.inline_run(httpserver_base_url, '--driver', 'Firefox',
-                                  *args, **kwargs)
+        return testdir.inline_run(
+            httpserver_base_url, "--driver", "Firefox", *args, **kwargs
+        )
 
     testdir.inline_runqa = inline_runqa
 
     def quick_qa(*args, **kwargs):
         reprec = inline_runqa(*args)
         outcomes = reprec.listoutcomes()
-        names = ('passed', 'skipped', 'failed')
+        names = ("passed", "skipped", "failed")
         for name, val in zip(names, outcomes):
             wantlen = kwargs.get(name)
             if wantlen is not None:

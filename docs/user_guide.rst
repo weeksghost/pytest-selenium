@@ -6,7 +6,7 @@ User Guide
 Quick Start
 ***********
 
-The pytest-selenium plugin provides a method scoped selenium
+The pytest-selenium plugin provides a function scoped selenium
 `fixture <http://pytest.org/latest/fixture.html>`_ for your tests. This means
 that any test with selenium as an argument will cause a browser instance to be
 invoked. The browser may run locally or remotely depending on your
@@ -95,7 +95,7 @@ Specifying a Browser
 ********************
 
 To indicate the browser you want to run your tests against you will need to
-specify a driver and optional capabilties.
+specify a driver and optional capabilities.
 
 Firefox
 -------
@@ -136,6 +136,16 @@ preferences, and a command line argument:
 See the `Firefox options API documentation`_ for full details of what can be
 configured.
 
+You can also use the ``firefox_preferences`` and ``firefox_arguments`` markers:
+
+.. code-block:: python
+
+  import pytest
+  @pytest.mark.firefox_arguments('-foreground')
+  @pytest.mark.firefox_preferences({'browser.anchor_color': '#FF0000'})
+  def test_firefox(selenium):
+      selenium.get('http://www.example.com')
+
 Chrome
 ------
 
@@ -172,14 +182,14 @@ configured.
 
 The ChromeDriver supports various command line arguments. These can be passed
 by implementing a ``driver_args`` fixture and returning a list of the desired
-arguments. The following example specifies the log file path:
+arguments. The following example specifies the log level:
 
 .. code-block:: python
 
   import pytest
   @pytest.fixture
   def driver_args():
-      return ['--log-path=chromedriver.log']
+      return ['--log-level=LEVEL']
 
 For a full list of supported command line arguments, run
 ``chromedriver --help`` in your terminal.
@@ -208,6 +218,9 @@ option to indicate where it can be found::
 
 PhantomJS
 ---------
+**NOTE:** Support for PhantomJS has been deprecated and will be removed in a
+future release. If running headless is a requirement, please consider using
+Firefox or Chrome instead.
 
 To use PhantomJS, you will need `download it <http://phantomjs.org/download.html>`_
 and specify ``PhantomJS`` for the ``--driver`` command line option. If
@@ -259,7 +272,7 @@ the default when running tests against a remote driver.
 
 To run your automated tests, simply specify ``Remote`` as your driver. Browser
 selection is determined using capabilities. Check the
-`desired capabilities documentation <https://github.com/SeleniumHQ/selenium/wiki/DesiredCapabilities#used-by-the-selenium-server-for-browser-selection>`_
+`desired capabilities documentation <https://github.com/SeleniumHQ/selenium/wiki/DesiredCapabilities#used-by-the-selenium-server-for-browser-selection>`__
 for details of accepted values. There are also a number of
 `browser specific capabilities <https://github.com/SeleniumHQ/selenium/wiki/DesiredCapabilities#browser-specific-capabilities>`_
 that can be set. Be sure to also check the documentation for your chosen
@@ -269,7 +282,8 @@ driver, as the accepted capabilities may differ::
 
 Note that if your server is not running locally or is running on an alternate
 port you will need to specify the ``--host`` and ``--port`` command line
-options::
+options, or by setting the ``SELENIUM_HOST`` and ``SELENIUM_PORT`` environment
+variables::
 
   pytest --driver Remote --host selenium.hostname --port 5555 --capability browserName firefox
 
@@ -279,8 +293,10 @@ Sauce Labs
 To run your automated tests using `Sauce Labs <https://saucelabs.com/>`_, you
 must provide a valid username and API key. This can be done either by using
 a ``.saucelabs`` configuration file in the working directory or your home
-directory, or by setting the ``SAUCELABS_USERNAME`` and ``SAUCELABS_API_KEY``
-environment variables.
+directory, by setting the ``SAUCELABS_USERNAME`` and ``SAUCELABS_API_KEY``
+environment variables, or by using the environment variables as detailed
+`here <https://wiki.saucelabs.com/display/DOCS/
+Best+Practice%3A+Use+Environment+Variables+for+Authentication+Credentials>`_
 
 Alternatively, when using `Jenkins CI`_ declarative pipelines,
 credentials can be set as environment variables as follows:
@@ -316,6 +332,40 @@ to help you with your configuration. Additional capabilities can be set using
 the ``--capability`` command line arguments. See the
 `test configuration documentation <https://docs.saucelabs.com/reference/test-configuration/>`_
 for full details of what can be configured.
+
+W3C compliant capabilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Starting with selenium version 3.11.0 Sauce Labs supports the selenium W3C compliant capabilities.
+To use the W3C capabilities you have to set the ``SAUCELABS_W3C`` environment variable to ``true``
+and update your :ref:`capabilities <capabilities>` according to the Sauce labs
+`W3C documentation <https://wiki.saucelabs.com/display/DOCS/Selenium+W3C+Capabilities+Support+-+Beta>`_.
+
+Test result links
+~~~~~~~~~~~~~~~~~
+
+By default, links to Sauce Labs jobs are only visible to users logged in to the account
+that ran the job. To make a job visible without having to log in, you can create a link
+with an authentication token.
+
+This can be configured by setting the ``SAUCELABS_JOB_AUTH`` environment variable or by
+using a :ref:`configuration file <configuration-files>`
+
+An example using a :ref:`configuration file <configuration-files>`:
+
+.. code-block:: ini
+
+  [pytest]
+  saucelabs_job_auth = token
+
+You can also control the time to live for that link by setting the environment variable
+or :ref:`configuration file <configuration-files>`: value to ``day`` or ``hour``.
+
+Note that ``day`` means within the same day that the test was run,
+*not* "24 hours from test-run", likewise for ``hour``
+
+For more information, see
+`building links to test results <https://wiki.saucelabs.com/display/DOCS/Building+Links+to+Test+Results>`_
 
 BrowserStack
 ------------
@@ -458,11 +508,35 @@ arguments. See the
 `automation capabilities <https://help.crossbrowsertesting.com/selenium-testing/general/crossbrowsertesting-automation-capabilities/>`_
 for full details of what can be configured.
 
+.. _capabilities:
+
+Appium
+------
+
+**Note:** Appium support is not installed by default, see: `Installation <https://pytest-selenium.readthedocs.io/en/latest/installing.html>`_
+
+To run tests against mobile devices, you can use `Appium <https://appium.io>`_.
+This requires that you have the Appium server running.
+
+By default Appium will listen on host 127.0.0.1 and port 4723.
+
+To run your automated tests, simply specify ``Appium`` as your driver. Device
+selection is determined using capabilities. Check the
+`desired capabilities documentation <https://appium.io/docs/en/writing-running-appium/caps/>`__
+for details of accepted values.
+
+Note that if your Appium server is not running locally or is running on an
+alternate port you will need to specify the ``--host`` and ``--port``
+command line options, or by setting the ``APPIUM_HOST`` and ``APPIUM_PORT``
+environment variables::
+
+  pytest --driver Appium --host appium.hostname --port 5555
+
 Specifying Capabilities
 ***********************
 
 Configuration options are specified using a capabilities dictionary. This is
-required when using a Selenium server to specify the target environment, but
+required when using an Selenium server to specify the target environment, but
 can also be used to configure local drivers.
 
 Command Line Capabilities
@@ -477,7 +551,7 @@ Capabilities Files
 
 To specify capabilities, you can provide a JSON file on the command line using
 the `pytest-variables <https://github.com/pytest-dev/pytest-variables>`_ plugin.
-For example if you had a ``capabilties.json`` containing your capabilities, you
+For example if you had a ``capabilities.json`` containing your capabilities, you
 would need to include ``--variables capabilities.json`` on your command line.
 
 The following is an example of a variables file including capabilities:
@@ -585,6 +659,33 @@ or set the ``SELENIUM_EXCLUDE_DEBUG`` environment variable to a list of the
 
 For example, to exclude HTML, logs, and screenshots from the report, you could
 set ``SELENIUM_EXCLUDE_DEBUG`` to ``html:logs:screenshot``.
+
+Tips & Tricks
+*************
+
+Example solutions to common scenarios that sometimes gets reported as issues
+to the project.
+
+Save screenshot to file
+-----------------------
+
+To save a screenshot to the file system, especially when not using ``--html``,
+you can place the ``pytest_selenium_capture_debug`` hook in ``conftest.py``.
+
+The example will create a png-file using the test name.
+
+.. code-block:: python
+
+  import base64
+
+
+  def pytest_selenium_capture_debug(item, report, extra):
+      for log_type in extra:
+          if log_type["name"] == "Screenshot":
+              content = base64.b64decode(log_type["content"].encode("utf-8"))
+              with open(item.name + ".png", "wb") as f:
+                  f.write(content)
+
 
 .. _Jenkins CI: https://jenkins.io/
 .. _using environment variables in Jenkins pipelines: https://jenkins.io/doc/pipeline/tour/environment/
