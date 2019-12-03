@@ -8,6 +8,7 @@ from datetime import datetime
 import os
 import io
 import logging
+import json
 
 import pytest
 from requests.structures import CaseInsensitiveDict
@@ -265,6 +266,7 @@ def pytest_runtest_makereport(item, call):
             item.config.hook.pytest_selenium_capture_debug(
                 item=item, report=report, extra=extra)
             _add_zalenium_cookie(driver, summary)
+            _report_js_errors(driver, summary)
     if driver is not None:
         # allow hook implementations to further modify the report
         item.config.hook.pytest_selenium_runtest_makereport(
@@ -273,6 +275,18 @@ def pytest_runtest_makereport(item, call):
     if summary:
         report.sections.append(("pytest-selenium", "\n".join(summary)))
     report.extra = extra
+
+
+def _report_js_errors(driver, summary):
+    try:
+        browser_logs = driver.get_log('browser')
+        errors = [logentry for logentry in browser_logs]
+        if errors:
+            jlog = json.dumps(errors, sort_keys=True, indent=2)
+            summary.append('JS Console Errors\n{0}'.format(jlog))
+    except Exception as e:
+        summary.append('WARNING: Failed to gather JS Errors: {0}'.format(e))
+        return
 
 
 def _add_zalenium_cookie(driver, summary):
