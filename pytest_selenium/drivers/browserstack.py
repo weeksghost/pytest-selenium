@@ -7,7 +7,6 @@ import pytest
 import requests
 
 import allure
-#from allure.constants import AttachmentType
 
 from pytest_selenium.drivers.cloud import Provider
 
@@ -88,7 +87,6 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
         pytest_html = item.config.pluginmanager.getplugin("html")
         extra.append(pytest_html.extras.html(_video_html(video, session_id)))
         vid_markup = _video_html(video, session_id)
-        #allure.attach('Video', vid_markup, type=AttachmentType.HTML)
         allure.attach(vid_markup, name='Video', attachment_type=allure.attachment_type.HTML)
 
 def driver_kwargs(request, test, capabilities, **kwargs):

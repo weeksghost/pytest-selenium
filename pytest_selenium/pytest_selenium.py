@@ -324,9 +324,7 @@ def _gather_screenshot(item, report, driver, summary, extra):
         try:
             # Yandex reporting framwork https://goo.gl/oGDC2P
             import allure
-            from allure.constants import AttachmentType
-            allure_screen = allure.attach( \
-                'screenshot', allure_screenshot, type=AttachmentType.PNG)
+            allure.attach(allure_screenshot, name='Screenshot', attachment_type=allure.attachment_type.PNG)
         except Exception as e:
             summary.append( \
             'This project is using the Allure framework: http://allure.qatools.ru')
