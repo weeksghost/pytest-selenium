@@ -2,8 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from py.xml import html
 import pytest
 import requests
+
+import allure
+#from allure.constants import AttachmentType
 
 from pytest_selenium.drivers.cloud import Provider
 
@@ -11,6 +15,7 @@ from pytest_selenium.drivers.cloud import Provider
 class BrowserStack(Provider):
 
     API = "https://www.browserstack.com/automate/sessions/{session}.json"
+    JOB = "https://api.browserstack.com/automate/sessions/{session}"
 
     @property
     def auth(self):
@@ -42,6 +47,7 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
     passed = report.passed or (report.failed and hasattr(report, "wasxfail"))
     session_id = item._driver.session_id
     api_url = provider.API.format(session=session_id)
+    api_endpoint = provider.JOB.format(session=session_id)
 
     try:
         job_info = requests.get(api_url, auth=provider.auth, timeout=10).json()
@@ -74,6 +80,16 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
     except Exception as e:
         summary.append("WARNING: Failed to update job status: {0}".format(e))
 
+    video = requests.get(api_endpoint, auth=provider.auth, timeout=10,).json().get('automation_session').get('video_url')
+    if video == None:
+        pass
+    else:
+        summary.append(_video_html(video, session_id))
+        pytest_html = item.config.pluginmanager.getplugin("html")
+        extra.append(pytest_html.extras.html(_video_html(video, session_id)))
+        vid_markup = _video_html(video, session_id)
+        #allure.attach('Video', vid_markup, type=AttachmentType.HTML)
+        allure.attach(vid_markup, name='Video', attachment_type=allure.attachment_type.HTML)
 
 def driver_kwargs(request, test, capabilities, **kwargs):
     provider = BrowserStack()
@@ -85,3 +101,18 @@ def driver_kwargs(request, test, capabilities, **kwargs):
         "desired_capabilities": capabilities,
     }
     return kwargs
+
+
+def _video_html(video, session):
+    return str(
+        html.div(
+            html.video(
+                html.source(src=video, type="video/mp4"),
+                width="100%",
+                height="100%",
+                controls="controls",
+            ),
+            id="mediaplayer{session}".format(session=session),
+            style="margin-left:5px; overflow:hidden;",
+        )
+    )
