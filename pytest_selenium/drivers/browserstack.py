@@ -56,6 +56,9 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
         pytest_html = item.config.pluginmanager.getplugin("html")
         # Add the job URL to the HTML report
         extra.append(pytest_html.extras.url(job_url, "{0} Job".format(provider.name)))
+        job_url_markup = _job_url(job_url)
+        allure.attach(job_url_markup, name='Job URL', attachment_type=allure.attachment_type.HTML)
+
     except Exception as e:
         summary.append(
             "WARNING: Failed to determine {0} job URL: {1}".format(provider.name, e)
@@ -112,5 +115,18 @@ def _video_html(video, session):
             ),
             id="mediaplayer{session}".format(session=session),
             style="margin-left:5px; overflow:hidden;",
+        )
+    )
+
+
+def _job_url(url):
+    return str(
+        html.div(
+            html.a(
+                url,
+                href=url,
+                style="height:10px;",
+                target="_blank",
+            )
         )
     )
