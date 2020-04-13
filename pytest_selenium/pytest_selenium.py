@@ -18,6 +18,8 @@ from selenium.webdriver.support.event_firing_webdriver import EventFiringWebDriv
 
 from . import drivers
 
+import allure
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -308,6 +310,7 @@ def _gather_url(item, report, driver, summary, extra):
     if pytest_html is not None:
         # add url to the html report
         extra.append(pytest_html.extras.url(url))
+        allure.attach(url, name='Failure URL', attachment_type=allure.attachment_type.TEXT)
     summary.append("URL: {0}".format(url))
 
 
@@ -324,7 +327,6 @@ def _gather_screenshot(item, report, driver, summary, extra):
         extra.append(pytest_html.extras.image(screenshot, 'Screenshot'))
         try:
             # Yandex reporting framwork https://goo.gl/oGDC2P
-            import allure
             allure.attach(allure_screenshot, name='Screenshot', attachment_type=allure.attachment_type.PNG)
         except Exception as e:
             summary.append( \

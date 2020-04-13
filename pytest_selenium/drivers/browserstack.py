@@ -56,8 +56,6 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
         pytest_html = item.config.pluginmanager.getplugin("html")
         # Add the job URL to the HTML report
         extra.append(pytest_html.extras.url(job_url, "{0} Job".format(provider.name)))
-        job_url_markup = _job_url(job_url)
-        allure.attach(job_url_markup, name='Job URL', attachment_type=allure.attachment_type.HTML)
 
     except Exception as e:
         summary.append(
@@ -82,6 +80,8 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
     except Exception as e:
         summary.append("WARNING: Failed to update job status: {0}".format(e))
 
+
+    # Add video results to the summary
     video = requests.get(api_endpoint, auth=provider.auth, timeout=10,).json().get('automation_session').get('video_url')
     if video == None:
         pass
@@ -91,6 +91,14 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
         extra.append(pytest_html.extras.html(_video_html(video, session_id)))
         vid_markup = _video_html(video, session_id)
         allure.attach(vid_markup, name='Video', attachment_type=allure.attachment_type.HTML)
+
+    # Add the job URL to Allure results
+    if job_url == None:
+        pass
+    else:
+        job_url_markup = _job_html(job_url)
+        allure.attach(job_url_markup, name='Browserstack URL', attachment_type=allure.attachment_type.HTML)
+
 
 def driver_kwargs(request, test, capabilities, **kwargs):
     provider = BrowserStack()
@@ -119,13 +127,13 @@ def _video_html(video, session):
     )
 
 
-def _job_url(url):
+def _job_html(url):
     return str(
         html.div(
             html.a(
-                url,
+                "BrowserStack Results",
                 href=url,
-                style="height:10px;",
+                style="font-family: Helvetica, Arial, sans-serif; color: #000;",
                 target="_blank",
             )
         )
