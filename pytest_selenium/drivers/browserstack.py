@@ -93,11 +93,11 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
         allure.attach(vid_markup, name='Video', attachment_type=allure.attachment_type.HTML)
 
     # Add the job URL to Allure results
-    if job_url == None:
-        pass
-    else:
-        job_url_markup = _job_html(job_url)
-        allure.attach(job_url_markup, name='Browserstack URL', attachment_type=allure.attachment_type.HTML)
+    #if job_url == None:
+    #    pass
+    #else:
+    #    job_url_markup = _job_html(job_url)
+    #    allure.attach(job_url_markup, name='Browserstack URL', attachment_type=allure.attachment_type.HTML)
 
 
 def driver_kwargs(request, test, capabilities, **kwargs):
