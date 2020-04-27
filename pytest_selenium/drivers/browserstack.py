@@ -82,7 +82,7 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
 
 
     # Add video results to the summary
-    video = requests.get(api_endpoint, auth=provider.auth, timeout=10,).json().get('automation_session').get('video_url')
+    video = requests.get(api_endpoint, auth=provider.auth, timeout=60,).json().get('automation_session').get('video_url')
     if video == None:
         pass
     else:
