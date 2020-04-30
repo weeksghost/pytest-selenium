@@ -293,11 +293,12 @@ def _report_js_errors(driver, summary):
 
 
 def _add_zalenium_cookie(driver, summary):
-    try:
-        driver.add_cookie({'name': 'zaleniumTestPassed', 'value': 'false'})
-    except Exception as e:
-        summary.append('WARNING: Failed to gather set cookie: {0}'.format(e))
-        return
+    pass
+#    try:
+#        driver.add_cookie({'name': 'zaleniumTestPassed', 'value': 'false'})
+#    except Exception as e:
+#        summary.append('WARNING: Failed to gather set cookie: {0}'.format(e))
+#        return
 
 
 def _gather_url(item, report, driver, summary, extra):
