@@ -67,7 +67,7 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
         job_status = job_info["automation_session"]["status"]
         status = "running" if passed else "error"
         if report.when == "teardown" and passed:
-            status = "completed"
+            status = "passed"
         if job_status not in ("error", status):
             # Only update the result if it's not already marked as failed
             requests.put(
@@ -75,7 +75,7 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
                 headers={"Content-Type": "application/json"},
                 params={"status": status},
                 auth=provider.auth,
-                timeout=10,
+                timeout=30,
             )
     except Exception as e:
         summary.append("WARNING: Failed to update job status: {0}".format(e))
