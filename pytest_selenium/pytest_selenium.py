@@ -311,7 +311,11 @@ def _gather_url(item, report, driver, summary, extra):
     if pytest_html is not None:
         # add url to the html report
         extra.append(pytest_html.extras.url(url))
-        allure.attach(url, name='Failure URL', attachment_type=allure.attachment_type.TEXT)
+        try:
+            allure.attach(url, name='Failure URL', attachment_type=allure.attachment_type.TEXT)
+        except Exception as e:
+            summary.append("WARNING: Failed to gather URL: {0}".format(e))
+            return
     summary.append("URL: {0}".format(url))
 
 
