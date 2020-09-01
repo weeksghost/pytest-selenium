@@ -1,6 +1,29 @@
 Release Notes
 =============
 
+2.0.0 (2020-08-05)
+------------------
+
+* Drop python 2.7 support (incl. PyPy)
+
+* Add python 3.8 support
+
+* Drop `PhantomJS` support
+
+* Add driver initialization retry
+
+* Ensure compatibility with `pytest-xdist` 2.0.
+
+  * Thanks to `@Zac-HD <https://github.com/Zac-HD>`_ for the PR.
+
+* Add support for Edge options coming in Selenium 4.0.
+
+  * Thanks to `@PhilippSelenium <https://github.com/PhilippSelenium>`_ for the PR.
+
+* Lazy-load `requests` dependency for improved test run time.
+
+  * Thanks to `@boxed <https://github.com/boxed>`_ for the PR.
+
 1.17.0 (2019-07-13)
 -------------------
 

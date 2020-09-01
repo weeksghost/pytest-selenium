@@ -7,7 +7,6 @@ import os
 import re
 
 import pytest
-import requests
 
 
 def pytest_addoption(parser):
@@ -22,8 +21,8 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    if hasattr(config, "slaveinput"):
-        return  # xdist slave
+    if hasattr(config, "workerinput"):
+        return  # avoid doing anything if this is an xdist worker node
     config.option.sensitive_url = (
         config.getoption("sensitive_url")
         or config.getini("sensitive_url")
@@ -56,6 +55,10 @@ def sensitive_url(request, base_url):
     # consider this environment sensitive if the base url or any redirection
     # history matches the regular expression
     urls = [base_url]
+
+    # lazy import requests for projects that don't need requests
+    import requests
+
     try:
         response = requests.get(base_url, timeout=10)
         urls.append(response.url)

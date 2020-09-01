@@ -4,7 +4,6 @@
 
 from py.xml import html
 import pytest
-import requests
 
 import allure
 
@@ -47,6 +46,9 @@ def pytest_selenium_runtest_makereport(item, report, summary, extra):
     session_id = item._driver.session_id
     api_url = provider.API.format(session=session_id)
     api_endpoint = provider.JOB.format(session=session_id)
+
+    # lazy import requests for projects that don't need requests
+    import requests
 
     try:
         job_info = requests.get(api_url, auth=provider.auth, timeout=10).json()
